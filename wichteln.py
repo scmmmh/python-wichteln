@@ -1,6 +1,7 @@
 import argparse
 import collections
 import configparser
+import email
 import getpass
 import itertools
 import random
@@ -53,12 +54,8 @@ smtp.login(args.smtp_user, getpass.getpass('SMTP Password:'))
 
 for key, value in settings.items():
     if value['assigned']:
-        msg = '''From: Weihnachtsmann <weihnachtsmann-noreply@mail.room3b.eu>
-To: %s <%s>
-Subject: Wichteln
-Content-Type: text/text; charset=utf-8
-
-Lieber %s,
+        msg = email.message.EmailMessage()
+        msg.set_content('''Lieber %s,
 
 Du wichtelst heuer für:
 
@@ -66,9 +63,10 @@ Du wichtelst heuer für:
 
 Liebe Grüße,
 Der Weihnachtsmann''' % (key,
-                         value['email'],
-                         key,
-                         '\n'.join(['%s: %s' % a for a in value['assigned']]))
-        smtp.sendmail('weihnachtsmann-noreply@mail.room3b.eu',
-                      value['email'],
-                      msg.encode('utf-8'))
+                         '\n'.join(['%s: %s' % a for a in value['assigned']])))
+        msg['Subject'] = 'Wichteln'
+        msg['From'] = 'Der Weihnachtsmann <weihnachtsmann-noreply@mail.room3b.eu>'
+        msg['To'] = '%s <%s>' % (key, value['email'])
+        smtp.send_message(msg)
+
+smtp.quit()
